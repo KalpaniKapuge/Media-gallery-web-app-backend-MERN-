@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-dotenv.config();
+
 
 import express from 'express';
 import mongoose from 'mongoose';
@@ -11,7 +11,9 @@ import authRoutes from './routes/authRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 
+dotenv.config();
 const app = express();
+
 
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
