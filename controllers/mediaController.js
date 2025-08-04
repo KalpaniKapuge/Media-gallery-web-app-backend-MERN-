@@ -30,7 +30,7 @@ const uploadToCloudinary = (buffer, options = {}) =>
 
 export const uploadMedia = async (req, res) => {
   try {
-    console.log('📤 Upload request received');
+    console.log(' Upload request received');
     console.log('User:', req.user);
     console.log('File:', req.file ? {
       fieldname: req.file.fieldname,
@@ -49,10 +49,10 @@ export const uploadMedia = async (req, res) => {
     // Use filename as title if not provided
     const mediaTitle = title || req.file.originalname.split('.')[0];
     
-    console.log('🚀 Uploading to Cloudinary...');
+    console.log(' Uploading to Cloudinary...');
     const result = await uploadToCloudinary(req.file.buffer);
     
-    console.log('💾 Saving to database...');
+    console.log(' Saving to database...');
     const media = new Media({
       title: mediaTitle,
       description: description || '',
@@ -65,7 +65,7 @@ export const uploadMedia = async (req, res) => {
     });
     
     await media.save();
-    console.log('✅ Media saved successfully:', media._id);
+    console.log(' Media saved successfully:', media._id);
     
     res.status(201).json({
       success: true,
@@ -81,7 +81,7 @@ export const uploadMedia = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Upload error:', error);
+    console.error(' Upload error:', error);
     res.status(500).json({ 
       error: 'Upload failed',
       message: error.message 
@@ -91,7 +91,7 @@ export const uploadMedia = async (req, res) => {
 
 export const getGallery = async (req, res) => {
   try {
-    console.log('📋 Gallery request for user:', req.user.id);
+    console.log(' Gallery request for user:', req.user.id);
     
     const { search, tags, page = 1, limit = 20 } = req.query;
     const filter = { 
@@ -109,7 +109,7 @@ export const getGallery = async (req, res) => {
       filter.tags = { $in: tags.split(',').map((t) => t.trim()) };
     }
     
-    console.log('🔍 Query filter:', filter);
+    console.log(' Query filter:', filter);
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
@@ -122,7 +122,7 @@ export const getGallery = async (req, res) => {
       Media.countDocuments(filter)
     ]);
     
-    console.log(`✅ Found ${medias.length} media items (${total} total)`);
+    console.log(` Found ${medias.length} media items (${total} total)`);
     
     res.json({
       success: true,
@@ -137,7 +137,7 @@ export const getGallery = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Gallery error:', error);
+    console.error(' Gallery error:', error);
     res.status(500).json({ 
       error: 'Failed to load gallery',
       message: error.message 
@@ -148,7 +148,7 @@ export const getGallery = async (req, res) => {
 export const updateMedia = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log('📝 Update request for media:', id);
+    console.log(' Update request for media:', id);
     
     const media = await Media.findById(id);
     if (!media) {
@@ -168,7 +168,7 @@ export const updateMedia = async (req, res) => {
     }
     
     await media.save();
-    console.log('✅ Media updated successfully');
+    console.log(' Media updated successfully');
     
     res.json({
       success: true,
@@ -177,7 +177,7 @@ export const updateMedia = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Update error:', error);
+    console.error(' Update error:', error);
     res.status(500).json({ 
       error: 'Update failed',
       message: error.message 
@@ -188,7 +188,7 @@ export const updateMedia = async (req, res) => {
 export const deleteMedia = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log('🗑️ Delete request for media:', id);
+    console.log(' Delete request for media:', id);
     
     const media = await Media.findById(id);
     if (!media) {
@@ -202,15 +202,15 @@ export const deleteMedia = async (req, res) => {
     // Delete from Cloudinary
     try {
       await cloudinary.uploader.destroy(media.publicId);
-      console.log('🗑️ Deleted from Cloudinary:', media.publicId);
+      console.log(' Deleted from Cloudinary:', media.publicId);
     } catch (cloudinaryError) {
-      console.warn('⚠️ Cloudinary deletion failed:', cloudinaryError.message);
+      console.warn('Cloudinary deletion failed:', cloudinaryError.message);
       // Continue with database deletion even if Cloudinary fails
     }
     
     // Delete from database
     await Media.findByIdAndDelete(id);
-    console.log('✅ Media deleted successfully');
+    console.log('Media deleted successfully');
     
     res.json({
       success: true,
@@ -218,7 +218,7 @@ export const deleteMedia = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Delete error:', error);
+    console.error(' Delete error:', error);
     res.status(500).json({ 
       error: 'Delete failed',
       message: error.message 
@@ -229,7 +229,7 @@ export const deleteMedia = async (req, res) => {
 export const downloadZip = async (req, res) => {
   try {
     const { ids } = req.body;
-    console.log('📦 ZIP download request for:', ids);
+    console.log('ZIP download request for:', ids);
     
     if (!Array.isArray(ids) || !ids.length) {
       return res.status(400).json({ error: 'No media selected for download' });
@@ -249,13 +249,13 @@ export const downloadZip = async (req, res) => {
       return res.status(404).json({ error: 'No accessible media found' });
     }
     
-    console.log(`📦 Creating ZIP with ${medias.length} files`);
+    console.log(` Creating ZIP with ${medias.length} files`);
     
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="media-${Date.now()}.zip"`);
     
     const archive = archiver('zip', { 
-      zlib: { level: 9 } // Maximum compression
+      zlib: { level: 9 } 
     });
     
     archive.on('error', (err) => {
@@ -275,7 +275,7 @@ export const downloadZip = async (req, res) => {
     let addedCount = 0;
     for (const media of medias) {
       try {
-        console.log(`📥 Downloading: ${media.url}`);
+        console.log(` Downloading: ${media.url}`);
         const response = await fetch(media.url);
         
         if (!response.ok) {
@@ -299,11 +299,11 @@ export const downloadZip = async (req, res) => {
       archive.append('No files could be downloaded', { name: 'error.txt' });
     }
     
-    console.log(`📦 Added ${addedCount}/${medias.length} files to archive`);
+    console.log(` Added ${addedCount}/${medias.length} files to archive`);
     await archive.finalize();
     
   } catch (error) {
-    console.error('❌ ZIP download error:', error);
+    console.error(' ZIP download error:', error);
     if (!res.headersSent) {
       res.status(500).json({ 
         error: 'ZIP download failed',
