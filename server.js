@@ -20,13 +20,13 @@ const app = express();
 const requiredEnvVars = ['MONGO_URI', 'JWT_SECRET', 'FRONTEND_URL'];
 for (const v of requiredEnvVars) {
   if (!process.env[v]) {
-    console.error(`❌ Missing required environment variable: ${v}`);
+    console.error(` Missing required environment variable: ${v}`);
     process.exit(1);
   }
 }
 
-console.log('🔧 Environment check passed');
-console.log('🌐 Frontend URL:', process.env.FRONTEND_URL);
+console.log('Environment check passed');
+console.log('Frontend URL:', process.env.FRONTEND_URL);
 
 // CORS
 const corsOptions = {
@@ -35,7 +35,7 @@ const corsOptions = {
     if (!origin || allowed.includes(origin)) {
       callback(null, true);
     } else {
-      console.log('❌ CORS blocked origin:', origin);
+      console.log('CORS blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -65,12 +65,12 @@ app.use(
 
 // Request logger
 app.use((req, res, next) => {
-  console.log(`📨 ${req.method} ${req.originalUrl} - ${new Date().toISOString()}`);
+  console.log(`${req.method} ${req.originalUrl} - ${new Date().toISOString()}`);
   if (req.body && Object.keys(req.body).length) {
     const logBody = { ...req.body };
     if (logBody.password) logBody.password = '***';
     if (logBody.newPassword) logBody.newPassword = '***';
-    console.log('📦 Body:', logBody);
+    console.log(' Body:', logBody);
   }
   next();
 });
@@ -95,7 +95,7 @@ app.use('/api/admin', adminContactRoutes); // legacy
 
 // 404 fallback
 app.use('*', (req, res) => {
-  console.log('❌ 404 - Route not found:', req.method, req.originalUrl);
+  console.log(' 404 - Route not found:', req.method, req.originalUrl);
   res.status(404).json({
     error: 'Route not found',
     method: req.method,
@@ -117,7 +117,7 @@ app.use('*', (req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error('💥 Unhandled error:', err);
+  console.error(' Unhandled error:', err);
 
   if (err.message === 'Not allowed by CORS') {
     return res.status(403).json({ error: 'CORS policy violation', origin: req.headers.origin });
@@ -156,26 +156,26 @@ app.use((err, req, res, next) => {
 // Startup
 const start = async () => {
   try {
-    console.log('🔄 Connecting to MongoDB...');
+    console.log('Connecting to MongoDB...');
     await mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log('✅ MongoDB connected successfully');
+    console.log('MongoDB connected successfully');
 
     const PORT = process.env.PORT || 5000;
     const server = app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`🌐 API URL: http://localhost:${PORT}`);
-      console.log(`📱 Frontend URL: ${process.env.FRONTEND_URL}`);
+      console.log(` Server running on port ${PORT}`);
+      console.log(` API URL: http://localhost:${PORT}`);
+      console.log(` Frontend URL: ${process.env.FRONTEND_URL}`);
     });
 
     process.on('SIGTERM', () => {
-      console.log('📝 SIGTERM received');
+      console.log(' SIGTERM received');
       server.close(() => {
-        console.log('👋 Server closed');
+        console.log(' Server closed');
         mongoose.connection.close();
       });
     });
   } catch (error) {
-    console.error('💥 Startup failed:', error.message);
+    console.error(' Startup failed:', error.message);
     process.exit(1);
   }
 };

@@ -4,7 +4,7 @@ import path from 'path';
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
-  console.log('🔍 File filter check:', {
+  console.log(' File filter check:', {
     originalname: file.originalname,
     mimetype: file.mimetype,
     size: file.size
@@ -25,11 +25,11 @@ const fileFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
   
   if (!allowedMimes.includes(file.mimetype) && !allowedExtensions.includes(ext)) {
-    console.log('❌ File type not allowed:', file.mimetype, ext);
+    console.log(' File type not allowed:', file.mimetype, ext);
     return cb(new Error('Only images (JPG, PNG, GIF, WebP) and ZIP files are allowed'), false);
   }
   
-  console.log('✅ File type allowed');
+  console.log(' File type allowed');
   cb(null, true);
 };
 

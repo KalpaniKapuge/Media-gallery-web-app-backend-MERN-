@@ -12,9 +12,9 @@ const router = express.Router();
 
 // Middleware to log requests (helpful for debugging)
 router.use((req, res, next) => {
-  console.log(`🌐 Auth route: ${req.method} ${req.originalUrl}`);
-  console.log(`📦 Body:`, req.body);
-  console.log(`🎯 Headers:`, {
+  console.log(`Auth route: ${req.method} ${req.originalUrl}`);
+  console.log(` Body:`, req.body);
+  console.log(` Headers:`, {
     'content-type': req.headers['content-type'],
     'authorization': req.headers['authorization'] ? 'Bearer ***' : 'none'
   });
