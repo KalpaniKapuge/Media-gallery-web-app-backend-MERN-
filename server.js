@@ -8,7 +8,8 @@ import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/authRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import mediaRoutes from './routes/mediaRoutes.js';
-import adminRoutes from './routes/adminRoutes.js'; // ensure this file exists and exports a router
+import adminRoutes from './routes/adminRoutes.js'; 
+import adminContactRoutes from './routes/adminContactRoutes.js'
 
 // Load env
 dotenv.config();
@@ -88,8 +89,9 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api', contactRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/upload', mediaRoutes); // legacy
+app.use('/api/upload', mediaRoutes);
+app.use('/api/admin', adminRoutes); // existing
+app.use('/api/admin', adminContactRoutes); // legacy
 
 // 404 fallback
 app.use('*', (req, res) => {
