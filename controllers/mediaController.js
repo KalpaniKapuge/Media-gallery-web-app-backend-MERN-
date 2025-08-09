@@ -3,6 +3,11 @@ import cloudinary from '../utils/cloudinary.js';
 import streamifier from 'streamifier';
 import archiver from 'archiver';
 import fetch from 'node-fetch';
+import {
+  getMediaById
+} from '../controllers/mediaController.js';
+import { authenticate } from '../middlewares/auth.js';
+import { router } from '../routes/mediaRoutes.js';
 
 const uploadToCloudinary = (buffer, options = {}) =>
   new Promise((resolve, reject) => {
@@ -27,6 +32,22 @@ const uploadToCloudinary = (buffer, options = {}) =>
     
     streamifier.createReadStream(buffer).pipe(stream);
   });
+
+
+
+exports.getMediaById = async (req, res) => {
+  try {
+    const media = await Media.findById(req.params.id);
+    if (!media) {
+      return res.status(404).json({ message: 'Media not found' });
+    }
+    res.json(media);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 
 export const uploadMedia = async (req, res) => {
   try {
@@ -226,6 +247,26 @@ export const deleteMedia = async (req, res) => {
   }
 };
 
+
+
+
+exports.getMediaById = async (req, res) => {
+  try {
+    const media = await Media.findById(req.params.id);
+    if (!media) {
+      return res.status(404).json({ message: 'Media not found' });
+    }
+    res.json(media);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+
+
+
 export const downloadZip = async (req, res) => {
   try {
     const { ids } = req.body;
@@ -312,3 +353,4 @@ export const downloadZip = async (req, res) => {
     }
   }
 };
+router.get('/:id', authenticate, getMediaById);

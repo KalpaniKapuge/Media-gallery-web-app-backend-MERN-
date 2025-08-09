@@ -1,9 +1,10 @@
 import express from 'express';
-import { authenticate } from '../middlewares/auth.js';  
+import { authenticate } from '../middlewares/auth.js';
 import { upload } from '../utils/upload.js';
 import {
   uploadMedia,
   getGallery,
+  getMediaById,
   updateMedia,
   deleteMedia,
   downloadZip,
@@ -16,14 +17,20 @@ router.use((req, res, next) => {
   next();
 });
 
+// Upload & gallery endpoints
 router.post('/upload', authenticate, upload.single('file'), uploadMedia);
 router.get('/gallery', authenticate, getGallery);
+router.get('/', authenticate, getGallery); // Fallback for gallery
+
+// Specific item endpoints
+router.get('/:id', authenticate, getMediaById);
 router.put('/:id', authenticate, updateMedia);
 router.delete('/:id', authenticate, deleteMedia);
+
 router.post('/download-zip', authenticate, downloadZip);
 
 
-router.post('/', authenticate, upload.single('file'), uploadMedia);
-router.get('/', authenticate, getGallery);
+
+router.post('/', authenticate, upload.single('file'), uploadMedia); // Fallback for upload
 
 export default router;

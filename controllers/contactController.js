@@ -16,9 +16,10 @@ export const submitMessage = async (req, res) => {
     });
 
     await contact.save();
+    console.log('✅ Message saved successfully:', contact);
     res.status(201).json({ success: true, data: contact });
   } catch (e) {
-    console.error('submitMessage error:', e);
+    console.error('❌ submitMessage error:', e);
     res.status(500).json({ error: 'Failed to submit message', message: e.message });
   }
 };
@@ -26,11 +27,16 @@ export const submitMessage = async (req, res) => {
 // User gets their own messages
 export const getMyMessages = async (req, res) => {
   try {
-    const messages = await Contact.find({ userId: req.user.id, isDeleted: false })
-      .sort({ createdAt: -1 });
+    console.log('🔍 Getting messages for user:', req.user.id);
+    const messages = await Contact.find({ 
+      userId: req.user.id, 
+      isDeleted: { $ne: true } // Changed to handle undefined isDeleted
+    }).sort({ createdAt: -1 });
+    
+    console.log('📋 Found messages:', messages.length);
     res.json({ success: true, data: messages });
   } catch (e) {
-    console.error('getMyMessages error:', e);
+    console.error('❌ getMyMessages error:', e);
     res.status(500).json({ error: 'Failed to load messages' });
   }
 };
@@ -53,7 +59,7 @@ export const updateMessage = async (req, res) => {
     await contact.save();
     res.json({ success: true, data: contact });
   } catch (e) {
-    console.error('updateMessage error:', e);
+    console.error('❌ updateMessage error:', e);
     res.status(500).json({ error: 'Update failed' });
   }
 };
@@ -71,9 +77,10 @@ export const deleteMessage = async (req, res) => {
     }
     contact.isDeleted = true;
     await contact.save();
+    console.log('🗑️ Message soft-deleted:', id);
     res.status(204).send();
   } catch (e) {
-    console.error('deleteMessage error:', e);
+    console.error('❌ deleteMessage error:', e);
     res.status(500).json({ error: 'Delete failed' });
   }
 };
@@ -82,7 +89,7 @@ export const deleteMessage = async (req, res) => {
 export const getAllMessages = async (req, res) => {
   try {
     const { search, page = 1, limit = 25 } = req.query;
-    const filter = { isDeleted: false };
+    const filter = { isDeleted: { $ne: true } };
     if (search) {
       const regex = new RegExp(search, 'i');
       filter.$or = [
@@ -115,7 +122,7 @@ export const getAllMessages = async (req, res) => {
       },
     });
   } catch (e) {
-    console.error('getAllMessages error:', e);
+    console.error('❌ getAllMessages error:', e);
     res.status(500).json({ error: 'Failed to load messages' });
   }
 };
@@ -125,9 +132,10 @@ export const adminDelete = async (req, res) => {
   try {
     const { id } = req.params;
     await Contact.findByIdAndUpdate(id, { isDeleted: true });
+    console.log('🗑️ Admin deleted message:', id);
     res.status(204).send();
   } catch (e) {
-    console.error('adminDelete error:', e);
+    console.error('❌ adminDelete error:', e);
     res.status(500).json({ error: 'Delete failed' });
   }
 };

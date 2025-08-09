@@ -6,19 +6,16 @@ export const authenticate = async (req, res, next) => {
     const header = req.headers.authorization;
     let token = null;
     if (header && header.startsWith('Bearer ')) token = header.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'No token' });
+    if (!token) return res.status(401).json({ error: 'No token provided' });
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-    if (!user || !user.isActive) return res.status(401).json({ error: 'Unauthorized' });
-    req.user = user;
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) return res.status(401).json({ error: 'User not found' });
+
+    req.user = { id: user._id.toString(), name: user.name, email: user.email, role: user.role };
     next();
-  } catch (err) {
+  } catch (error) {
+    console.error('Auth middleware error:', error.message);
     return res.status(401).json({ error: 'Invalid token' });
   }
-};
-
-export const authorizeAdmin = (req, res, next) => {
-  if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
-  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
-  next();
 };
