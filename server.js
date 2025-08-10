@@ -4,7 +4,6 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
-import path from 'path';
 
 import authRoutes from './routes/authRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
@@ -81,7 +80,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api', contactRoutes);
-app.use('/api/upload', mediaRoutes); // convenience
+app.use('/api/upload', mediaRoutes); 
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin', adminContactRoutes);
 
