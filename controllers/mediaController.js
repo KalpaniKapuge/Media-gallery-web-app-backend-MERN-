@@ -3,6 +3,7 @@ import cloudinary from '../utils/cloudinary.js';
 import streamifier from 'streamifier';
 import archiver from 'archiver';
 import fetch from 'node-fetch';
+import mongoose from 'mongoose';
 
 const uploadToCloudinary = (buffer, options = {}) =>
   new Promise((resolve, reject) => {
@@ -27,17 +28,26 @@ const uploadToCloudinary = (buffer, options = {}) =>
     streamifier.createReadStream(buffer).pipe(stream);
   });
 
-// ✅ FIXED: Single definitionimport Media from '../models/media.js';
-
-export const getMediaById = async (req, res, next) => {
+// ✅ FIXED: Single definition
+export const getMediaById = async (req, res) => {
   try {
-    const media = await Media.findById(req.params.id);
-    if (!media) {
-      return res.status(404).json({ error: 'Media not found' });
+    const id = req.params.id;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid media ID' });
     }
+
+    const media = await Media.findById(id);
+
+    if (!media) {
+      return res.status(404).json({ message: 'Media not found' });
+    }
+
     res.json(media);
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    console.error('getMediaById error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 

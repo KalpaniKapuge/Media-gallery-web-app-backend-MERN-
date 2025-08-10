@@ -5,6 +5,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 
+import userRoutes from './routes/userRoutes.js'
 import authRoutes from './routes/authRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import mediaRoutes from './routes/mediaRoutes.js';
@@ -79,6 +80,7 @@ app.use((req, res, next) => {
 // Mount routes
 app.use('/api/auth', authRoutes);
 app.use('/api/media', mediaRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api', contactRoutes);
 app.use('/api/upload', mediaRoutes); 
 app.use('/api/admin', adminRoutes);
