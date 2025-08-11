@@ -1,6 +1,15 @@
 import Contact from '../models/contact.js';
+import nodemailer from 'nodemailer'; 
 
 // User submits a message
+const transporter = nodemailer.createTransport({
+  service: 'gmail', // or your email provider
+  auth: {
+    user: process.env.EMAIL_USER, // your email, set in .env
+    pass: process.env.EMAIL_PASS, // app password or real password, set in .env
+  },
+});
+
 export const submitMessage = async (req, res) => {
   try {
     const { name, email, message } = req.body;
@@ -17,13 +26,22 @@ export const submitMessage = async (req, res) => {
 
     await contact.save();
     console.log('✅ Message saved successfully:', contact);
+
+    // Send confirmation email to the provided email address
+    await transporter.sendMail({
+      from: `"Your Company" <${process.env.EMAIL_USER}>`, // sender address
+      to: email.trim(), // recipient: the email entered in form
+      subject: 'Your message has been received',
+      text: `Hi ${name.trim()},\n\nThank you for contacting us. We received your message:\n\n"${message.trim()}"\n\nWe will get back to you shortly.\n\nBest regards,\nYour Company Team`,
+      // optionally you can add html: '<p>...</p>'
+    });
+
     res.status(201).json({ success: true, data: contact });
   } catch (e) {
     console.error('❌ submitMessage error:', e);
     res.status(500).json({ error: 'Failed to submit message', message: e.message });
   }
 };
-
 // User gets their own messages
 export const getMyMessages = async (req, res) => {
   try {
@@ -57,6 +75,21 @@ export const updateMessage = async (req, res) => {
       contact.message = req.body.message.trim() || contact.message;
     }
     await contact.save();
+
+    // Send email with updated message
+    try {
+      await transporter.sendMail({
+        from: `"Your Company" <${process.env.EMAIL_USER}>`,
+        to: contact.email, // send to original email address
+        subject: 'Your message has been updated',
+        text: `Hi ${contact.name},\n\nYour message has been updated to:\n\n"${contact.message}"\n\nThank you.\nYour Company Team`,
+      });
+      console.log('Email with updated message sent successfully');
+    } catch (emailErr) {
+      console.error('Failed to send update email:', emailErr);
+      // Optional: do NOT fail the entire update if email sending fails
+    }
+
     res.json({ success: true, data: contact });
   } catch (e) {
     console.error('❌ updateMessage error:', e);

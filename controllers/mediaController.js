@@ -6,6 +6,7 @@ import archiver from 'archiver';
 import fetch from 'node-fetch';
 import mongoose from 'mongoose';
 
+// Helper for uploading any buffer to Cloudinary
 const uploadToCloudinary = (buffer, options = {}) =>
   new Promise((resolve, reject) => {
     const uploadOptions = {
@@ -14,17 +15,10 @@ const uploadToCloudinary = (buffer, options = {}) =>
       ...options,
     };
 
-    const stream = cloudinary.uploader.upload_stream(
-      uploadOptions,
-      (error, result) => {
-        if (error) {
-          console.error('Cloudinary upload error:', error);
-          reject(error);
-        } else {
-          resolve(result);
-        }
-      }
-    );
+    const stream = cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
+      if (error) reject(error);
+      else resolve(result);
+    });
 
     streamifier.createReadStream(buffer).pipe(stream);
   });
@@ -32,13 +26,11 @@ const uploadToCloudinary = (buffer, options = {}) =>
 export const getMediaById = async (req, res) => {
   try {
     const id = req.params.id;
-
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid media ID' });
     }
 
     const media = await Media.findById(id);
-
     if (!media) {
       return res.status(404).json({ message: 'Media not found' });
     }
@@ -53,7 +45,7 @@ export const getMediaById = async (req, res) => {
 export const uploadMedia = async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+      return res.status(400).json({ success: false, error: 'No file uploaded' });
     }
 
     const { title, description, tags } = req.body;
@@ -79,7 +71,7 @@ export const uploadMedia = async (req, res) => {
     });
   } catch (error) {
     console.error('Upload error:', error);
-    res.status(500).json({ error: 'Upload failed', message: error.message });
+    res.status(500).json({ success: false, error: 'Upload failed', message: error.message });
   }
 };
 
@@ -108,7 +100,7 @@ export const getGallery = async (req, res) => {
     });
   } catch (error) {
     console.error('Gallery error:', error);
-    res.status(500).json({ error: 'Failed to load gallery', message: error.message });
+    res.status(500).json({ success: false, error: 'Failed to load gallery', message: error.message });
   }
 };
 
@@ -116,9 +108,9 @@ export const updateMedia = async (req, res) => {
   try {
     const { id } = req.params;
     const media = await Media.findById(id);
-    if (!media) return res.status(404).json({ error: 'Media not found' });
+    if (!media) return res.status(404).json({ success: false, error: 'Media not found' });
     if (media.uploadedBy.toString() !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ success: false, error: 'Access denied' });
     }
 
     const { title, description, tags } = req.body;
@@ -130,7 +122,7 @@ export const updateMedia = async (req, res) => {
     res.json({ success: true, message: 'Media updated successfully', media });
   } catch (error) {
     console.error('Update error:', error);
-    res.status(500).json({ error: 'Update failed', message: error.message });
+    res.status(500).json({ success: false, error: 'Update failed', message: error.message });
   }
 };
 
@@ -138,9 +130,9 @@ export const deleteMedia = async (req, res) => {
   try {
     const { id } = req.params;
     const media = await Media.findById(id);
-    if (!media) return res.status(404).json({ error: 'Media not found' });
+    if (!media) return res.status(404).json({ success: false, error: 'Media not found' });
     if (media.uploadedBy.toString() !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ success: false, error: 'Access denied' });
     }
 
     try {
@@ -153,7 +145,7 @@ export const deleteMedia = async (req, res) => {
     res.json({ success: true, message: 'Media deleted successfully' });
   } catch (error) {
     console.error('Delete error:', error);
-    res.status(500).json({ error: 'Delete failed', message: error.message });
+    res.status(500).json({ success: false, error: 'Delete failed', message: error.message });
   }
 };
 
@@ -161,11 +153,11 @@ export const downloadZip = async (req, res) => {
   try {
     const { ids } = req.body;
     if (!Array.isArray(ids) || !ids.length) {
-      return res.status(400).json({ error: 'No media selected for download' });
+      return res.status(400).json({ success: false, error: 'No media selected for download' });
     }
 
     const medias = await Media.find({ _id: { $in: ids }, uploadedBy: req.user.id, isActive: true });
-    if (medias.length === 0) return res.status(404).json({ error: 'No accessible media found' });
+    if (medias.length === 0) return res.status(404).json({ success: false, error: 'No accessible media found' });
 
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="media-${Date.now()}.zip"`);
@@ -186,46 +178,32 @@ export const downloadZip = async (req, res) => {
     await archive.finalize();
   } catch (error) {
     console.error('ZIP download error:', error);
-    res.status(500).json({ error: 'ZIP download failed', message: error.message });
+    res.status(500).json({ success: false, error: 'ZIP download failed', message: error.message });
   }
 };
 
-// Fixed: Profile picture upload with proper error handling and authentication
-export const uploadProfileMedia = async (req, res) => {
+// ✅ Fixed: Profile picture upload, ESM safe, consistent naming
+export const uploadProfilePic = async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+      return res.status(400).json({ success: false, error: 'No file uploaded' });
     }
 
-    // Upload to Cloudinary (example)
-    const streamifier = require('streamifier');
-    const cloudinary = require('../utils/cloudinary.js');  // your configured cloudinary helper
-    
-    const streamUpload = (buffer) => {
-      return new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: 'profile_pics' },
-          (error, result) => {
-            if (result) resolve(result);
-            else reject(error);
-          }
-        );
-        streamifier.createReadStream(buffer).pipe(stream);
-      });
-    };
+    const result = await uploadToCloudinary(req.file.buffer, { folder: 'profile_pics' });
 
-    const result = await streamUpload(req.file.buffer);
-
-    // Update user profilePic URL in DB
     const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
 
-    user.profilePic = result.secure_url;  // save Cloudinary URL
+    user.profilePic = result.secure_url;
     await user.save();
 
-    res.status(200).json({ message: 'Profile picture updated', profilePic: user.profilePic });
+    res.status(200).json({
+      success: true,
+      message: 'Profile picture updated',
+      profilePic: user.profilePic,
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Upload failed' });
+    console.error('Profile upload error:', error);
+    res.status(500).json({ success: false, error: 'Upload failed', message: error.message });
   }
 };
