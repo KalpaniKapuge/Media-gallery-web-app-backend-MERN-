@@ -7,6 +7,10 @@ const userSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  profilePic: {
+    type: String,
+    default: '/uploads/default-avatar.png'
+  },
   email: { 
     type: String, 
     unique: true, 
@@ -16,9 +20,8 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    // Don't make password required since Google users might not have one
     required: function() {
-      return !this.googleId; // Only required if no Google ID
+      return !this.googleId;
     }
   },
   role: { 
@@ -30,15 +33,12 @@ const userSchema = new mongoose.Schema({
     type: Boolean, 
     default: true 
   },
-  // OTP functionality
   otp: String,
   otpExpires: Date,
-  // Google OAuth
   googleId: String,
 }, { 
   timestamps: true 
 });
-
 // Pre-save hook to hash password
 userSchema.pre('save', async function(next) {
   try {

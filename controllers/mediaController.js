@@ -1,4 +1,5 @@
 import Media from '../models/media.js';
+import User from '../models/user.js';
 import cloudinary from '../utils/cloudinary.js';
 import streamifier from 'streamifier';
 import archiver from 'archiver';
@@ -10,7 +11,7 @@ const uploadToCloudinary = (buffer, options = {}) =>
     const uploadOptions = {
       folder: 'media_gallery',
       resource_type: 'auto',
-      ...options
+      ...options,
     };
 
     const stream = cloudinary.uploader.upload_stream(
@@ -28,12 +29,10 @@ const uploadToCloudinary = (buffer, options = {}) =>
     streamifier.createReadStream(buffer).pipe(stream);
   });
 
-// ✅ FIXED: Single definition
 export const getMediaById = async (req, res) => {
   try {
     const id = req.params.id;
 
-    // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid media ID' });
     }
@@ -69,14 +68,14 @@ export const uploadMedia = async (req, res) => {
       publicId: result.public_id,
       uploadedBy: req.user.id,
       fileType: req.file.mimetype,
-      fileSize: req.file.size
+      fileSize: req.file.size,
     });
 
     await media.save();
     res.status(201).json({
       success: true,
       message: 'Upload successful',
-      media
+      media,
     });
   } catch (error) {
     console.error('Upload error:', error);
@@ -90,12 +89,12 @@ export const getGallery = async (req, res) => {
     const filter = { uploadedBy: req.user.id, isActive: true };
 
     if (search) filter.$text = { $search: search };
-    if (tags) filter.tags = { $in: tags.split(',').map(t => t.trim()) };
+    if (tags) filter.tags = { $in: tags.split(',').map((t) => t.trim()) };
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const [medias, total] = await Promise.all([
       Media.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit)).lean(),
-      Media.countDocuments(filter)
+      Media.countDocuments(filter),
     ]);
 
     res.json({
@@ -104,8 +103,8 @@ export const getGallery = async (req, res) => {
       pagination: {
         total,
         page: parseInt(page),
-        pages: Math.ceil(total / parseInt(limit))
-      }
+        pages: Math.ceil(total / parseInt(limit)),
+      },
     });
   } catch (error) {
     console.error('Gallery error:', error);
@@ -125,7 +124,7 @@ export const updateMedia = async (req, res) => {
     const { title, description, tags } = req.body;
     if (title) media.title = title;
     if (description) media.description = description;
-    if (tags) media.tags = tags.split(',').map(t => t.trim());
+    if (tags) media.tags = tags.split(',').map((t) => t.trim());
 
     await media.save();
     res.json({ success: true, message: 'Media updated successfully', media });
@@ -172,7 +171,9 @@ export const downloadZip = async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="media-${Date.now()}.zip"`);
 
     const archive = archiver('zip', { zlib: { level: 9 } });
-    archive.on('error', err => { throw err; });
+    archive.on('error', (err) => {
+      throw err;
+    });
     archive.pipe(res);
 
     for (const media of medias) {
@@ -186,5 +187,45 @@ export const downloadZip = async (req, res) => {
   } catch (error) {
     console.error('ZIP download error:', error);
     res.status(500).json({ error: 'ZIP download failed', message: error.message });
+  }
+};
+
+// Fixed: Profile picture upload with proper error handling and authentication
+export const uploadProfileMedia = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Upload to Cloudinary (example)
+    const streamifier = require('streamifier');
+    const cloudinary = require('../utils/cloudinary.js');  // your configured cloudinary helper
+    
+    const streamUpload = (buffer) => {
+      return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: 'profile_pics' },
+          (error, result) => {
+            if (result) resolve(result);
+            else reject(error);
+          }
+        );
+        streamifier.createReadStream(buffer).pipe(stream);
+      });
+    };
+
+    const result = await streamUpload(req.file.buffer);
+
+    // Update user profilePic URL in DB
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    user.profilePic = result.secure_url;  // save Cloudinary URL
+    await user.save();
+
+    res.status(200).json({ message: 'Profile picture updated', profilePic: user.profilePic });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Upload failed' });
   }
 };

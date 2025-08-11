@@ -4,8 +4,11 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-import userRoutes from './routes/userRoutes.js'
+
+import userRoutes from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import mediaRoutes from './routes/mediaRoutes.js';
@@ -15,6 +18,11 @@ import adminContactRoutes from './routes/adminContactRoutes.js';
 dotenv.config();
 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ✅ Serve uploads folder as static
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Required env vars
 const requiredEnvVars = ['MONGO_URI', 'JWT_SECRET', 'FRONTEND_URL', 'CLOUDINARY_URL'];
@@ -28,7 +36,7 @@ for (const v of requiredEnvVars) {
 console.log('Environment check passed');
 console.log('Frontend URL:', process.env.FRONTEND_URL);
 
-// CORS
+// CORS setup
 const corsOptions = {
   origin: (origin, callback) => {
     const allowed = [process.env.FRONTEND_URL];
@@ -53,15 +61,13 @@ app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(cookieParser());
 
 // Rate limiter
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 1000,
-    message: { error: 'Too many requests, please try again later' },
-    standardHeaders: true,
-    legacyHeaders: false,
-  })
-);
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
+  message: { error: 'Too many requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
 
 // Request logger
 app.use((req, res, next) => {
@@ -75,14 +81,11 @@ app.use((req, res, next) => {
   next();
 });
 
-
-
-// Mount routes
+// ✅ Mount routes
 app.use('/api/auth', authRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api', contactRoutes);
-app.use('/api/upload', mediaRoutes); 
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin', adminContactRoutes);
 
@@ -92,41 +95,13 @@ app.use('*', (req, res) => {
   res.status(404).json({
     error: 'Route not found',
     method: req.method,
-    path: req.originalUrl,
-    availableEndpoints: [
-      'GET /',
-      'POST /api/auth/login',
-      'POST /api/auth/register',
-      'POST /api/media/upload',
-      'GET /api/media/gallery',
-      'GET /api/media/:id',
-      'POST /api/media/zip',
-      'POST /api/media/download-zip'
-    ],
+    path: req.originalUrl
   });
 });
 
 // Global error handler
 app.use((err, req, res, next) => {
   console.error(' Unhandled error:', err);
-  if (err.message === 'Not allowed by CORS') {
-    return res.status(403).json({ error: 'CORS policy violation', origin: req.headers.origin });
-  }
-  if (err.name === 'MongooseError' || err.name === 'MongoError') {
-    return res.status(503).json({ error: 'Database connection error', message: 'Please try again later' });
-  }
-  if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-    return res.status(401).json({ error: 'Invalid or expired token' });
-  }
-  if (err.name === 'ValidationError') {
-    return res.status(400).json({ error: 'Validation error', details: err.message });
-  }
-  if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(400).json({ error: 'File too large' });
-  }
-  if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-    return res.status(400).json({ error: 'Unexpected file field' });
-  }
   res.status(500).json({
     error: 'Internal server error',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
@@ -141,18 +116,10 @@ const start = async () => {
     console.log('MongoDB connected successfully');
 
     const PORT = process.env.PORT || 5000;
-    const server = app.listen(PORT, () => {
+    app.listen(PORT, () => {
       console.log(` Server running on port ${PORT}`);
       console.log(` API URL: http://localhost:${PORT}`);
       console.log(` Frontend URL: ${process.env.FRONTEND_URL}`);
-    });
-
-    process.on('SIGTERM', () => {
-      console.log(' SIGTERM received');
-      server.close(() => {
-        console.log(' Server closed');
-        mongoose.connection.close();
-      });
     });
   } catch (error) {
     console.error(' Startup failed:', error.message);
