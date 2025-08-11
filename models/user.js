@@ -45,7 +45,7 @@ userSchema.pre('save', async function(next) {
     // Only hash if password is present and modified
     if (this.isModified('password') && this.password) {
       console.log('Hashing password for user:', this.email);
-      const saltRounds = 12; // Increased for better security
+      const saltRounds = 12; 
       this.password = await bcrypt.hash(this.password, saltRounds);
       console.log('Password hashed successfully');
     }
@@ -86,7 +86,7 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
     console.log('About to compare passwords:', {
       storedPasswordLength: storedPassword.length,
       candidateLength: candidatePasswordStr.length,
-      storedPasswordStartsWith: storedPassword.substring(0, 7) // $2b$12$ for bcrypt
+      storedPasswordStartsWith: storedPassword.substring(0, 7) 
     });
     
     const isMatch = await bcrypt.compare(candidatePasswordStr, storedPassword);

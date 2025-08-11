@@ -3,10 +3,10 @@ import nodemailer from 'nodemailer';
 
 // User submits a message
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // or your email provider
+  service: 'gmail', 
   auth: {
-    user: process.env.EMAIL_USER, // your email, set in .env
-    pass: process.env.EMAIL_PASS, // app password or real password, set in .env
+    user: process.env.EMAIL_USER, 
+    pass: process.env.EMAIL_PASS, 
   },
 });
 
@@ -25,36 +25,36 @@ export const submitMessage = async (req, res) => {
     });
 
     await contact.save();
-    console.log('✅ Message saved successfully:', contact);
+    console.log(' Message saved successfully:', contact);
 
     // Send confirmation email to the provided email address
     await transporter.sendMail({
-      from: `"Your Company" <${process.env.EMAIL_USER}>`, // sender address
-      to: email.trim(), // recipient: the email entered in form
+      from: `"Your Company" <${process.env.EMAIL_USER}>`, 
+      to: email.trim(), 
       subject: 'Your message has been received',
       text: `Hi ${name.trim()},\n\nThank you for contacting us. We received your message:\n\n"${message.trim()}"\n\nWe will get back to you shortly.\n\nBest regards,\nYour Company Team`,
-      // optionally you can add html: '<p>...</p>'
+      
     });
 
     res.status(201).json({ success: true, data: contact });
   } catch (e) {
-    console.error('❌ submitMessage error:', e);
+    console.error(' submitMessage error:', e);
     res.status(500).json({ error: 'Failed to submit message', message: e.message });
   }
 };
 // User gets their own messages
 export const getMyMessages = async (req, res) => {
   try {
-    console.log('🔍 Getting messages for user:', req.user.id);
+    console.log(' Getting messages for user:', req.user.id);
     const messages = await Contact.find({ 
       userId: req.user.id, 
-      isDeleted: { $ne: true } // Changed to handle undefined isDeleted
+      isDeleted: { $ne: true } 
     }).sort({ createdAt: -1 });
     
-    console.log('📋 Found messages:', messages.length);
+    console.log(' Found messages:', messages.length);
     res.json({ success: true, data: messages });
   } catch (e) {
-    console.error('❌ getMyMessages error:', e);
+    console.error(' getMyMessages error:', e);
     res.status(500).json({ error: 'Failed to load messages' });
   }
 };
@@ -80,19 +80,18 @@ export const updateMessage = async (req, res) => {
     try {
       await transporter.sendMail({
         from: `"Your Company" <${process.env.EMAIL_USER}>`,
-        to: contact.email, // send to original email address
+        to: contact.email, 
         subject: 'Your message has been updated',
         text: `Hi ${contact.name},\n\nYour message has been updated to:\n\n"${contact.message}"\n\nThank you.\nYour Company Team`,
       });
       console.log('Email with updated message sent successfully');
     } catch (emailErr) {
       console.error('Failed to send update email:', emailErr);
-      // Optional: do NOT fail the entire update if email sending fails
     }
 
     res.json({ success: true, data: contact });
   } catch (e) {
-    console.error('❌ updateMessage error:', e);
+    console.error(' updateMessage error:', e);
     res.status(500).json({ error: 'Update failed' });
   }
 };
@@ -110,10 +109,10 @@ export const deleteMessage = async (req, res) => {
     }
     contact.isDeleted = true;
     await contact.save();
-    console.log('🗑️ Message soft-deleted:', id);
+    console.log(' Message soft-deleted:', id);
     res.status(204).send();
   } catch (e) {
-    console.error('❌ deleteMessage error:', e);
+    console.error(' deleteMessage error:', e);
     res.status(500).json({ error: 'Delete failed' });
   }
 };
@@ -155,7 +154,7 @@ export const getAllMessages = async (req, res) => {
       },
     });
   } catch (e) {
-    console.error('❌ getAllMessages error:', e);
+    console.error(' getAllMessages error:', e);
     res.status(500).json({ error: 'Failed to load messages' });
   }
 };
@@ -165,10 +164,10 @@ export const adminDelete = async (req, res) => {
   try {
     const { id } = req.params;
     await Contact.findByIdAndUpdate(id, { isDeleted: true });
-    console.log('🗑️ Admin deleted message:', id);
+    console.log(' Admin deleted message:', id);
     res.status(204).send();
   } catch (e) {
-    console.error('❌ adminDelete error:', e);
+    console.error(' adminDelete error:', e);
     res.status(500).json({ error: 'Delete failed' });
   }
 };

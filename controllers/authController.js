@@ -11,10 +11,12 @@ const signToken = (user) => {
   return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
+const ADMIN_INVITE_CODE = process.env.ADMIN_INVITE_CODE;
+
 // Manual register + OTP request
 export const requestRegisterOTP = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password,role,adminCode } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
@@ -25,6 +27,9 @@ export const requestRegisterOTP = async (req, res) => {
       return res.status(400).json({ error: 'Email already registered' });
     }
 
+     if (role === 'admin' && adminCode !== ADMIN_INVITE_CODE) {
+      return res.status(403).json({ error: 'Invalid admin invite code' });
+    }
     const otp = generateOTP();
     const otpExpires = Date.now() + 10 * 60 * 1000;
 
@@ -32,6 +37,7 @@ export const requestRegisterOTP = async (req, res) => {
       name,
       email,
       password,
+      role,
       otp,
       otpExpires,
     });

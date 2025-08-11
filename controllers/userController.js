@@ -35,7 +35,7 @@ export const updateUserProfile = async (req, res) => {
       role: user.role
     };
 
-    console.log('✅ User profile updated successfully');
+    console.log(' User profile updated successfully');
 
     res.json({ 
       success: true,
@@ -43,7 +43,7 @@ export const updateUserProfile = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Update user profile error:', error);
+    console.error(' Update user profile error:', error);
     res.status(500).json({ 
       success: false,
       message: 'Server error',

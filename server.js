@@ -21,7 +21,7 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ Serve uploads folder as static
+// Serve uploads folder as static
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Required env vars
@@ -81,7 +81,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ✅ Mount routes
+// Mount routes
 app.use('/api/auth', authRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/users', userRoutes);

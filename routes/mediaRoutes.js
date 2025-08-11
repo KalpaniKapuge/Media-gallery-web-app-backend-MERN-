@@ -3,7 +3,7 @@ import { authenticate } from '../middlewares/auth.js';
 import { upload } from '../uploads/upload.js';
 import {
   getMediaById,
-  uploadProfilePic, // ✅ matches controller
+  uploadProfilePic, 
   uploadMedia,
   getGallery,
   updateMedia,
@@ -15,7 +15,7 @@ const router = express.Router();
 
 // Debug log
 router.use((req, res, next) => {
-  console.log(`🔥 Incoming media route: ${req.method} ${req.originalUrl}`);
+  console.log(`Incoming media route: ${req.method} ${req.originalUrl}`);
   next();
 });
 
