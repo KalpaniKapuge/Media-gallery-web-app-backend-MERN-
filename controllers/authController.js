@@ -6,6 +6,7 @@ import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 dotenv.config();
 
+
 const signToken = (user) => {
   if (!process.env.JWT_SECRET) throw new Error('Missing JWT_SECRET');
   return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
